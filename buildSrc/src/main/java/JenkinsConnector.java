@@ -52,27 +52,7 @@ public class JenkinsConnector {
     }
 
     public void executeTestOnRemote(Channel channel, final String testName, List<URL> classPath) throws Exception {
-        OurTestResportProcessor rp = new OurTestResportProcessor() {
-            @Override
-            public void started(TestDescriptorInternal testDescriptorInternal, TestStartEvent testStartEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public void completed(Object o, TestCompleteEvent testCompleteEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public void output(Object o, TestOutputEvent testOutputEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public void failure(Object o, Throwable throwable) {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-        };
+        OurTestResportProcessor rp = getOurTestResportProcessor();
         URLClassLoader cl = new URLClassLoader(classPath.toArray(new URL[0]));
         channel.call(new RuntimeExceptionCallable(cl,testName, channel.export(OurTestResportProcessor.class,rp)));
         System.out.println("And back");
@@ -97,4 +77,30 @@ public class JenkinsConnector {
             return null;
         }
     }
+
+    private OurTestResportProcessor getOurTestResportProcessor() {
+        return new OurTestResportProcessor() {
+            @Override
+            public void started(TestDescriptorInternal testDescriptorInternal, TestStartEvent testStartEvent) {
+                System.out.println("Something happened");
+            }
+
+            @Override
+            public void completed(Object o, TestCompleteEvent testCompleteEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void output(Object o, TestOutputEvent testOutputEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failure(Object o, Throwable throwable) {
+                System.out.println("We got called");
+            }
+        };
+    }
+
+
 }

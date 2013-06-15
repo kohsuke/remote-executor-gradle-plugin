@@ -1,0 +1,62 @@
+import org.gradle.api.Action;
+import org.gradle.api.internal.tasks.testing.TestClassRunInfo;
+import org.gradle.api.internal.tasks.testing.TestResultProcessor;
+import org.gradle.api.internal.tasks.testing.WorkerTestClassProcessorFactory;
+import org.gradle.api.internal.tasks.testing.worker.RemoteTestClassProcessor;
+import org.gradle.api.internal.tasks.testing.worker.TestWorker;
+import org.gradle.internal.Factory;
+import org.gradle.process.JavaForkOptions;
+import org.gradle.process.internal.WorkerProcess;
+import org.gradle.process.internal.WorkerProcessBuilder;
+
+import java.io.File;
+
+public class JenkinsTestClassProcessor {
+    private final Factory<WorkerProcessBuilder> workerFactory;
+    private final WorkerTestClassProcessorFactory processorFactory;
+    private final JavaForkOptions options;
+    private final Iterable<File> classPath;
+    private final Action<WorkerProcessBuilder> buildConfigAction;
+    private RemoteTestClassProcessor remoteProcessor;
+    private WorkerProcess workerProcess;
+    private TestResultProcessor resultProcessor;
+
+    public ForkingTestClassProcessor(Factory<WorkerProcessBuilder> workerFactory, WorkerTestClassProcessorFactory processorFactory, JavaForkOptions options, Iterable<File> classPath, Action<WorkerProcessBuilder> buildConfigAction) {
+        this.workerFactory = workerFactory;
+        this.processorFactory = processorFactory;
+        this.options = options;
+        this.classPath = classPath;
+        this.buildConfigAction = buildConfigAction;
+    }
+
+    public void startProcessing(TestResultProcessor resultProcessor) {
+        this.resultProcessor = resultProcessor;
+    }
+
+    public void processTestClass(TestClassRunInfo testClass) {
+        if (remoteProcessor == null) {
+            WorkerProcessBuilder builder = workerFactory.create();
+            builder.applicationClasspath(classPath);
+            builder.setLoadApplicationInSystemClassLoader(true);
+            builder.worker(new TestWorker(processorFactory));
+            options.copyTo(builder.getJavaCommand());
+            buildConfigAction.execute(builder);
+
+            workerProcess = builder.build();
+            workerProcess.start();
+
+            workerProcess.getConnection().addIncoming(TestResultProcessor.class, resultProcessor);
+            remoteProcessor = workerProcess.getConnection().addOutgoing(RemoteTestClassProcessor.class);
+
+            remoteProcessor.startProcessing();
+        }
+
+        remoteProcessor.processTestClass(testClass);
+    }
+
+    public void stop() {
+        if (remoteProcessor != null) {
+            remoteProcessor.stop();
+            workerProcess.waitForStop();
+        }
+    }}
