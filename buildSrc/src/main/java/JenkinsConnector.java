@@ -52,7 +52,7 @@ public class JenkinsConnector {
     }
 
     public void executeTestOnRemote(Channel channel, final String testName, List<URL> classPath) throws Exception {
-        TestResultProcessor rp = new TestResultProcessor() {
+        OurTestResportProcessor rp = new OurTestResportProcessor() {
             @Override
             public void started(TestDescriptorInternal testDescriptorInternal, TestStartEvent testStartEvent) {
                 //To change body of implemented methods use File | Settings | File Templates.
@@ -74,16 +74,16 @@ public class JenkinsConnector {
             }
         };
         URLClassLoader cl = new URLClassLoader(classPath.toArray(new URL[0]));
-        channel.call(new RuntimeExceptionCallable(cl,testName, channel.export(TestResultProcessor.class,rp)));
+        channel.call(new RuntimeExceptionCallable(cl,testName, channel.export(OurTestResportProcessor.class,rp)));
         System.out.println("And back");
     }
 
     private static class RuntimeExceptionCallable implements Callable<Object, Exception> {
         private final String testName;
         private final ClassLoaderHolder testClassLoader;
-        private final TestResultProcessor testResultProcessor;
+        private final OurTestResportProcessor testResultProcessor;
 
-        public RuntimeExceptionCallable(ClassLoader cl, String testName, TestResultProcessor testResultProcessor) {
+        public RuntimeExceptionCallable(ClassLoader cl, String testName, OurTestResportProcessor testResultProcessor) {
             this.testName = testName;
             this.testResultProcessor = testResultProcessor;
             testClassLoader = new ClassLoaderHolder(cl);
