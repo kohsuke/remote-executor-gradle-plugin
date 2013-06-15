@@ -6,4 +6,5 @@ dependencies {
    compile localGroovy()
    compile 'org.jenkins-ci.main:remoting:2.23'
    compile 'org.jenkins-ci.main:cli:1.509.1'
+   compile 'junit:junit:4.11'
 }

@@ -18,6 +18,12 @@ class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
     }
 }
 
+task runTestOnRemote << {
+    def connector = new JenkinsConnector()
+    Channel channel = connector.connectToJenkins("http://localhost:8080/jenkins");
+    connector.executeTestOnRemote(channel, "SomethingTest")
+}
+
 task connectForTests << {
     Channel channel = new JenkinsConnector().connectToJenkins("http://localhost:8080/jenkins");
 //    ServerSocket serverSocket = new ServerSocket();

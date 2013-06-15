@@ -1,10 +1,20 @@
 import hudson.cli.CLI;
 import hudson.remoting.Callable;
 import hudson.remoting.Channel;
+import org.gradle.api.InvalidUserDataException;
+import org.gradle.api.Transformer;
+import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
+import org.gradle.util.CollectionUtils;
+import org.junit.runner.Request;
+import org.junit.runner.Runner;
+import org.junit.runner.notification.RunListener;
+import org.junit.runner.notification.RunNotifier;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Collections;
@@ -45,5 +55,25 @@ public class JenkinsConnector {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
         return cli.getChannel();
+    }
+
+    public void executeTestOnRemote(Channel channel, final String testName) throws Exception {
+        channel.call(new RuntimeExceptionCallable(testName));
+        System.out.println("And back");
+    }
+
+    private static class RuntimeExceptionCallable implements Callable<Object, Exception> {
+        private final String testName;
+
+        public RuntimeExceptionCallable(String testName) {
+            this.testName = testName;
+        }
+
+        public Object call() throws Exception {
+            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(this.getClass().getClassLoader(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
+            testClassExecuter.execute(testName);
+            System.out.println("We ran the test");
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
     }
 }
