@@ -1,12 +1,36 @@
+import java.util.concurrent.Executors
 import java.util.logging.Logger;
-
+import hudson.remoting.Channel;
+import hudson.remoting.Callable;
 
 // -- default build ---------------------------------------------------------------------------------------------------
 apply plugin: 'eclipse'
 apply plugin: 'findbugs'
 apply plugin: 'java'
+apply plugin: 'idea'
 
 sourceCompatibility = 1.5
+
+class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
+    public Boolean call() throws Void {
+        println("I am here")
+        return true
+    }
+}
+
+task connectForTests << {
+    Channel channel = new JenkinsConnector().connectToJenkins("http://localhost:8080/jenkins");
+//    ServerSocket serverSocket = new ServerSocket();
+//    serverSocket.bind(new InetSocketAddress("localhost",53333));
+//    serverSocket.setSoTimeout(100*1000);
+//
+//    Socket s = serverSocket.accept();
+//    serverSocket.close();
+//    Channel channel = new Channel('connection to slave', Executors.newFixedThreadPool(1), s.getInputStream(), s.getOutputStream(), null)
+    boolean result = channel.call(new OnlyPrintout())
+    channel.close()
+    println result
+}
 
 repositories {
     mavenCentral()

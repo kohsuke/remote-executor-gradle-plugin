@@ -1,0 +1,9 @@
+apply plugin: 'groovy'
+apply plugin: 'idea'
+
+dependencies {
+   compile gradleApi()
+   compile localGroovy()
+   compile 'org.jenkins-ci.main:remoting:2.23'
+   compile 'org.jenkins-ci.main:cli:1.509.1'
+}
