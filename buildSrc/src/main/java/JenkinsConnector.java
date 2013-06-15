@@ -2,11 +2,16 @@ import hudson.cli.CLI;
 import hudson.remoting.Callable;
 import hudson.remoting.Channel;
 import hudson.remoting.ClassLoaderHolder;
+import org.gradle.api.internal.tasks.testing.TestCompleteEvent;
+import org.gradle.api.internal.tasks.testing.TestDescriptorInternal;
 import org.gradle.api.internal.tasks.testing.TestResultProcessor;
+import org.gradle.api.internal.tasks.testing.TestStartEvent;
 import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
+import org.gradle.api.tasks.testing.TestOutputEvent;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
 
 public class JenkinsConnector {
 
@@ -46,9 +51,29 @@ public class JenkinsConnector {
         return cli.getChannel();
     }
 
-    public void executeTestOnRemote(Channel channel, final String testName) throws Exception {
-        TestResultProcessor rp = null;
-        URLClassLoader cl = new URLClassLoader(new URL[0]/* TODO: actual test classpath*/);
+    public void executeTestOnRemote(Channel channel, final String testName, List<URL> classPath) throws Exception {
+        TestResultProcessor rp = new TestResultProcessor() {
+            @Override
+            public void started(TestDescriptorInternal testDescriptorInternal, TestStartEvent testStartEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void completed(Object o, TestCompleteEvent testCompleteEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void output(Object o, TestOutputEvent testOutputEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failure(Object o, Throwable throwable) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        };
+        URLClassLoader cl = new URLClassLoader(classPath.toArray(new URL[0]));
         channel.call(new RuntimeExceptionCallable(cl,testName, channel.export(TestResultProcessor.class,rp)));
         System.out.println("And back");
     }
@@ -67,9 +92,9 @@ public class JenkinsConnector {
         public Object call() throws Exception {
             JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(testClassLoader.get(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
             testClassExecuter.execute(testName);
-            testResultProcessor.failure(null,new Exception());
+            testResultProcessor.failure(null, new Exception());
             System.out.println("We ran the test");
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
     }
 }

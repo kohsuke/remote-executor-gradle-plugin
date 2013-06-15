@@ -21,7 +21,7 @@ class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
 task runTestOnRemote << {
     def connector = new JenkinsConnector()
     Channel channel = connector.connectToJenkins("http://localhost:8080/jenkins");
-    connector.executeTestOnRemote(channel, "SomethingTest")
+    connector.executeTestOnRemote(channel, "SomethingTest", project.sourceSets.test.runtimeClasspath.files*.toURI()*.toURL())
 }
 
 task connectForTests << {
