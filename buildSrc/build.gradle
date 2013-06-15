@@ -1,6 +1,9 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
 
+repositories {
+   mavenRepo name:"jenkins-ci.org", url:"http://repo.jenkins-ci.org/public/";
+}
 dependencies {
    compile gradleApi()
    compile localGroovy()
