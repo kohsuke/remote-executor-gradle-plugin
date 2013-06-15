@@ -1,6 +1,7 @@
 import hudson.cli.CLI;
 import hudson.remoting.Callable;
 import hudson.remoting.Channel;
+import hudson.remoting.ClassLoaderHolder;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Transformer;
 import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
@@ -58,19 +59,22 @@ public class JenkinsConnector {
     }
 
     public void executeTestOnRemote(Channel channel, final String testName) throws Exception {
-        channel.call(new RuntimeExceptionCallable(testName));
+        URLClassLoader cl = new URLClassLoader(new URL[0]/* TODO: actual test classpath*/);
+        channel.call(new RuntimeExceptionCallable(cl,testName));
         System.out.println("And back");
     }
 
     private static class RuntimeExceptionCallable implements Callable<Object, Exception> {
         private final String testName;
+        private final ClassLoaderHolder testClassLoader;
 
-        public RuntimeExceptionCallable(String testName) {
+        public RuntimeExceptionCallable(ClassLoader cl, String testName) {
             this.testName = testName;
+            testClassLoader = new ClassLoaderHolder(cl);
         }
 
         public Object call() throws Exception {
-            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(this.getClass().getClassLoader(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
+            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(testClassLoader.get(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
             testClassExecuter.execute(testName);
             System.out.println("We ran the test");
             return null;  //To change body of implemented methods use File | Settings | File Templates.
