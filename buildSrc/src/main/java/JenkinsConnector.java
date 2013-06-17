@@ -2,18 +2,26 @@ import events.Event;
 import events.TestRunEndedEvent;
 import events.TestRunStartedEvent;
 import hudson.cli.CLI;
-import hudson.remoting.Callable;
 import hudson.remoting.Channel;
+import hudson.remoting.ClassLoaderHolder;
+import hudson.remoting.DelegatingCallable;
 import hudson.remoting.Pipe;
 import junit.runner.TestRunListener;
+import org.gradle.api.internal.tasks.testing.TestCompleteEvent;
+import org.gradle.api.internal.tasks.testing.TestDescriptorInternal;
+import org.gradle.api.internal.tasks.testing.TestStartEvent;
 import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
+import org.gradle.api.tasks.testing.TestOutputEvent;
+import org.gradle.api.tasks.testing.TestResult;
 
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Future;
 
 public class JenkinsConnector implements Serializable {
@@ -118,23 +126,63 @@ public class JenkinsConnector implements Serializable {
         }
     }
 
-    public void executeTestOnRemote(Channel channel, final String testName) throws Exception {
-        channel.call(new RuntimeExceptionCallable(testName));
+    public void executeTestOnRemote(Channel channel, final String testName, List<URL> classPath) throws Exception {
+        OurTestResultProcessor rp = getOurTestResportProcessor();
+        URLClassLoader cl = new URLClassLoader(classPath.toArray(new URL[0]));
+        OurTestResultProcessor processor = channel.call(new RuntimeExceptionCallable(cl, testName, channel.export(OurTestResultProcessor.class, rp), channel));
+        processor.completed("Awesome", new TestCompleteEvent(34L, TestResult.ResultType.SUCCESS));
         System.out.println("And back");
     }
 
-    private static class RuntimeExceptionCallable implements Callable<Object, Exception> {
+    private static class RuntimeExceptionCallable implements DelegatingCallable<OurTestResultProcessor, Exception> {
         private final String testName;
+        private final ClassLoaderHolder testClassLoader;
+        private final OurTestResultProcessor testResultProcessor;
 
-        public RuntimeExceptionCallable(String testName) {
+        public RuntimeExceptionCallable(ClassLoader cl, String testName, OurTestResultProcessor testResultProcessor, Channel channel) {
             this.testName = testName;
+            this.testResultProcessor = testResultProcessor;
+            testClassLoader = new ClassLoaderHolder(cl);
         }
 
-        public Object call() throws Exception {
-            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(this.getClass().getClassLoader(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
+        public OurTestResultProcessor call() throws Exception {
+            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(Thread.currentThread().getContextClassLoader(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
             testClassExecuter.execute(testName);
+            System.out.println(Channel.current().getName());
+            testResultProcessor.failure(null, new Exception());
             System.out.println("We ran the test");
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return Channel.current().export(OurTestResultProcessor.class, getOurTestResportProcessor());
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return testClassLoader.get();
         }
     }
+
+    private static OurTestResultProcessor getOurTestResportProcessor() {
+        return new OurTestResultProcessor() {
+            @Override
+            public void started(TestDescriptorInternal testDescriptorInternal, TestStartEvent testStartEvent) {
+                System.out.println("Something happened");
+            }
+
+            @Override
+            public void completed(Object o, TestCompleteEvent testCompleteEvent) {
+                System.out.println("completed!: "+ o.toString());
+            }
+
+            @Override
+            public void output(Object o, TestOutputEvent testOutputEvent) {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failure(Object o, Throwable throwable) {
+                System.out.println("We got called");
+            }
+        };
+    }
+
+
 }

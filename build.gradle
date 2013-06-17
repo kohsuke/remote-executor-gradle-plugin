@@ -21,7 +21,7 @@ class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
 task runTestOnRemote << {
     def connector = new JenkinsConnector()
     Channel channel = connector.connectToJenkins("http://localhost:8080/jenkins");
-    connector.executeTestOnRemote(channel, "SomethingTest")
+    connector.executeTestOnRemote(channel, "com.tngtech.java.junit.dataprovider.MockitoFailingRemoteTest", project.sourceSets.test.runtimeClasspath.files*.toURI()*.toURL())
 }
 
 task connectForTests << {
@@ -37,6 +37,10 @@ dependencies {
     testCompile group: 'org.easytesting', name: 'fest-assert-core', version: '2.+'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '1.9.+'
     testCompile group: 'joda-time', name: 'joda-time', version: '2.2'
+}
+
+tasks.withType(Test).each { testTask ->
+    testTask.testExecuter = new JenkinsTestClassExecutor();
 }
 
 /*
