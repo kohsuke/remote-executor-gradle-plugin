@@ -2,12 +2,13 @@ import hudson.cli.CLI;
 import hudson.remoting.Callable;
 import hudson.remoting.Channel;
 import hudson.remoting.ClassLoaderHolder;
+import hudson.remoting.DelegatingCallable;
 import org.gradle.api.internal.tasks.testing.TestCompleteEvent;
 import org.gradle.api.internal.tasks.testing.TestDescriptorInternal;
-import org.gradle.api.internal.tasks.testing.TestResultProcessor;
 import org.gradle.api.internal.tasks.testing.TestStartEvent;
 import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
 import org.gradle.api.tasks.testing.TestOutputEvent;
+import org.gradle.api.tasks.testing.TestResult;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -52,34 +53,41 @@ public class JenkinsConnector {
     }
 
     public void executeTestOnRemote(Channel channel, final String testName, List<URL> classPath) throws Exception {
-        OurTestResportProcessor rp = getOurTestResportProcessor();
+        OurTestResultProcessor rp = getOurTestResportProcessor();
         URLClassLoader cl = new URLClassLoader(classPath.toArray(new URL[0]));
-        channel.call(new RuntimeExceptionCallable(cl,testName, channel.export(OurTestResportProcessor.class,rp)));
+        OurTestResultProcessor processor = channel.call(new RuntimeExceptionCallable(cl, testName, channel.export(OurTestResultProcessor.class, rp), channel));
+        processor.completed("Awesome", new TestCompleteEvent(34L, TestResult.ResultType.SUCCESS));
         System.out.println("And back");
     }
 
-    private static class RuntimeExceptionCallable implements Callable<Object, Exception> {
+    private static class RuntimeExceptionCallable implements DelegatingCallable<OurTestResultProcessor, Exception> {
         private final String testName;
         private final ClassLoaderHolder testClassLoader;
-        private final OurTestResportProcessor testResultProcessor;
+        private final OurTestResultProcessor testResultProcessor;
 
-        public RuntimeExceptionCallable(ClassLoader cl, String testName, OurTestResportProcessor testResultProcessor) {
+        public RuntimeExceptionCallable(ClassLoader cl, String testName, OurTestResultProcessor testResultProcessor, Channel channel) {
             this.testName = testName;
             this.testResultProcessor = testResultProcessor;
             testClassLoader = new ClassLoaderHolder(cl);
         }
 
-        public Object call() throws Exception {
-            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(testClassLoader.get(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
+        public OurTestResultProcessor call() throws Exception {
+            JUnitTestClassExecuter testClassExecuter = new JUnitTestClassExecuter(Thread.currentThread().getContextClassLoader(), new DummyJUnitSpec(), new MyRunListener(), new DummyTestClassExecutionListener());
             testClassExecuter.execute(testName);
+            System.out.println(Channel.current().getName());
             testResultProcessor.failure(null, new Exception());
             System.out.println("We ran the test");
-            return null;
+            return Channel.current().export(OurTestResultProcessor.class, getOurTestResportProcessor());
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return testClassLoader.get();
         }
     }
 
-    private OurTestResportProcessor getOurTestResportProcessor() {
-        return new OurTestResportProcessor() {
+    private static OurTestResultProcessor getOurTestResportProcessor() {
+        return new OurTestResultProcessor() {
             @Override
             public void started(TestDescriptorInternal testDescriptorInternal, TestStartEvent testStartEvent) {
                 System.out.println("Something happened");
@@ -87,7 +95,7 @@ public class JenkinsConnector {
 
             @Override
             public void completed(Object o, TestCompleteEvent testCompleteEvent) {
-                //To change body of implemented methods use File | Settings | File Templates.
+                System.out.println("completed!: "+ o.toString());
             }
 
             @Override

@@ -34,7 +34,9 @@ public class DataProviderRunnerTest {
         underTest = new DataProviderRunner(DataProviderRunnerTest.class);
 
         MockitoAnnotations.initMocks(this);
+        System.out.println("Get ready to mock");
         doReturn(testClass).when(underTest).getTestClassInt();
+        System.out.println("Mocked it!");
     }
 
     @SuppressWarnings("unchecked")
