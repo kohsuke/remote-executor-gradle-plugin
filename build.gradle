@@ -25,17 +25,7 @@ task runTestOnRemote << {
 }
 
 task connectForTests << {
-    Channel channel = new JenkinsConnector().connectToJenkins("http://localhost:8080/jenkins");
-//    ServerSocket serverSocket = new ServerSocket();
-//    serverSocket.bind(new InetSocketAddress("localhost",53333));
-//    serverSocket.setSoTimeout(100*1000);
-//
-//    Socket s = serverSocket.accept();
-//    serverSocket.close();
-//    Channel channel = new Channel('connection to slave', Executors.newFixedThreadPool(1), s.getInputStream(), s.getOutputStream(), null)
-    boolean result = channel.call(new OnlyPrintout())
-    channel.close()
-    println result
+    new JenkinsConnector().executeTests("http://localhost:8080/jenkins");
 }
 
 repositories {
