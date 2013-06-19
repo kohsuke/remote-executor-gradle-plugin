@@ -11,8 +11,7 @@ import org.mockito.Spy;
 import java.util.List;
 
 import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class MockitoFailingRemoteTest {
     @Spy
