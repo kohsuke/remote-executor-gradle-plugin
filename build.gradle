@@ -45,11 +45,10 @@ tasks.withType(Test).each { testTask ->
     testTask.testExecuter = new JenkinsTestClassExecutor();
 }
 
-/*
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.4'
+    gradleVersion = '1.6'
 }
-*/
+
 task jenkinsTest {
     // required due to jenkins fails if test output is not up to date :(
     // Solution found on http://www.practicalgradle.org/blog/2011/06/incremental-tests-with-jenkins/

@@ -48,6 +48,7 @@ public class JenkinsTestClassProcessor implements TestClassProcessor {
                 JenkinsConnector jenkinsConnector = new JenkinsConnector();
 
                 channel = jenkinsConnector.connectToJenkins(jenkinsUrl);
+//                channel = jenkinsConnector.connectToJenkinsMasterViaUpgrade(jenkinsUrl);
                 List<URL> urls = new ArrayList<URL>();
                 for (File file : classPath) {
                     urls.add(file.toURI().toURL());
