@@ -55,7 +55,8 @@ public class JenkinsConnector implements Serializable {
     public void executeTestOnRemote(Channel channel, final String testName, List<URL> classPath) throws Exception {
         OurTestResultProcessor rp = getOurTestResportProcessor();
         URLClassLoader cl = new URLClassLoader(classPath.toArray(new URL[0]));
-        OurTestResultProcessor processor = channel.call(new RuntimeExceptionCallable(cl, testName, channel.export(OurTestResultProcessor.class, rp), channel));
+        RuntimeExceptionCallable callable = new RuntimeExceptionCallable(cl, testName, channel.export(OurTestResultProcessor.class, rp));
+        OurTestResultProcessor processor = channel.call(callable);
         processor.completed("Awesome", new TestCompleteEvent(34L, TestResult.ResultType.SUCCESS));
         System.out.println("And back");
     }
@@ -65,7 +66,7 @@ public class JenkinsConnector implements Serializable {
         private final ClassLoaderHolder testClassLoader;
         private final OurTestResultProcessor testResultProcessor;
 
-        public RuntimeExceptionCallable(ClassLoader cl, String testName, OurTestResultProcessor testResultProcessor, Channel channel) {
+        public RuntimeExceptionCallable(ClassLoader cl, String testName, OurTestResultProcessor testResultProcessor) {
             this.testName = testName;
             this.testResultProcessor = testResultProcessor;
             testClassLoader = new ClassLoaderHolder(cl);

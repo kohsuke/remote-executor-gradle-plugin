@@ -18,16 +18,18 @@ class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
     }
 }
 
-task runTestOnRemote << {
+task runTestOnRemoteViaCliCommand << {
     def connector = new JenkinsConnector()
-//    Channel channel = connector.connectToJenkinsMasterViaUpgrade("http://localhost:8080/jenkins");
     Channel channel = connector.connectToJenkins("http://localhost:8080/jenkins");
     connector.executeTestOnRemote(channel, "com.tngtech.java.junit.dataprovider.MockitoFailingRemoteTest", project.sourceSets.test.runtimeClasspath.files*.toURI()*.toURL())
     channel.close();
 }
 
-task connectForTests << {
-    new JenkinsConnector().executeTests("http://localhost:8080/jenkins");
+task runTestOnRemoteViaUpgrade << {
+    def connector = new JenkinsConnector()
+    Channel channel = connector.connectToJenkinsMasterViaUpgrade("http://localhost:8080/jenkins");
+    connector.executeTestOnRemote(channel, "com.tngtech.java.junit.dataprovider.MockitoFailingRemoteTest", project.sourceSets.test.runtimeClasspath.files*.toURI()*.toURL())
+    channel.close();
 }
 
 repositories {

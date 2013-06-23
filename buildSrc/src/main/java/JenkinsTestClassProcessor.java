@@ -48,7 +48,6 @@ public class JenkinsTestClassProcessor implements TestClassProcessor {
                 JenkinsConnector jenkinsConnector = new JenkinsConnector();
 
                 channel = jenkinsConnector.connectToJenkins(jenkinsUrl);
-//                channel = jenkinsConnector.connectToJenkinsMasterViaUpgrade(jenkinsUrl);
                 List<URL> urls = new ArrayList<URL>();
                 for (File file : classPath) {
                     urls.add(file.toURI().toURL());
@@ -79,6 +78,7 @@ public class JenkinsTestClassProcessor implements TestClassProcessor {
         public OurRemoteTestClassProcessor call() throws Exception {
             JenkinsTestWorker jenkinsTestWorker = new JenkinsTestWorker(processorFactory);
             jenkinsTestWorker.execute(this);
+            Channel.current().pin(jenkinsTestWorker);
             return Channel.current().export(OurRemoteTestClassProcessor.class, jenkinsTestWorker);
         }
 
@@ -94,10 +94,12 @@ public class JenkinsTestClassProcessor implements TestClassProcessor {
             remoteProcessor.stop();
         }
         } finally {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
             }
         }
     }

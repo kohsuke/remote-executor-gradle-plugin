@@ -1,3 +1,4 @@
+import com.google.common.collect.ImmutableList;
 import hudson.remoting.Callable;
 import hudson.remoting.Channel;
 import hudson.remoting.RemoteInputStream;
@@ -7,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
 import org.gradle.util.FilteringClassLoader;
+import org.hamcrest.SelfDescribing;
 import org.junit.Test;
 
 import java.io.File;
@@ -20,6 +22,8 @@ import java.net.URLClassLoader;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Gradle's {@link FilteringClassLoader} hides JUnit classes from the classloader loading {@link JenkinsConnector},
@@ -43,15 +47,19 @@ class JUnitInjector implements Callable<Void,IOException> {
     private final InputStream content;
 
     /**
-     * Inserts JUnit jar up in the classloader hierarchy on the other side of the channel.
+     * Inserts JUnit and Hamcrest jar up in the classloader hierarchy on the other side of the channel.
      */
     static void insert(Channel ch) throws IOException, InterruptedException {
-        File jar = Which.jarFile(Test.class);
-        InputStream in = new RemoteInputStream(new FileInputStream(jar));
-        try {
-            ch.call(new JUnitInjector(jar,in));
-        } finally {
-            in.close();
+        List<File> jars = new ArrayList<File>();
+        jars.add(Which.jarFile(Test.class));
+        jars.add(Which.jarFile(SelfDescribing.class));
+        for (File jar : jars) {
+            InputStream in = new RemoteInputStream(new FileInputStream(jar));
+            try {
+                ch.call(new JUnitInjector(jar,in));
+            } finally {
+                in.close();
+            }
         }
     }
 

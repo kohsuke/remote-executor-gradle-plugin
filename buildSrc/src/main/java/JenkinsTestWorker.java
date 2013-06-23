@@ -35,13 +35,17 @@ public class JenkinsTestWorker implements OurRemoteTestClassProcessor, Serializa
     }
 
     public void execute(final JenkinsTestClassProcessor.RemoteTestClassProcessorCreator workerProcessContext) {
-        LOGGER.info("{} executing tests.", Channel.current().getName());
+        LOGGER.info("{} executing tests.", getChannelName());
 
-        System.setProperty(WORKER_ID_SYS_PROPERTY, Channel.current().getName());
+        System.setProperty(WORKER_ID_SYS_PROPERTY, getChannelName());
 
         testServices = new TestFrameworkServiceRegistry();
         startReceivingTests(workerProcessContext, testServices);
         System.out.println("Finished executing");
+    }
+
+    private String getChannelName() {
+        return Channel.current().getName();
     }
 
     private void startReceivingTests(JenkinsTestClassProcessor.RemoteTestClassProcessorCreator remoteTestClassProcessorCreator, ServiceRegistry testServices) {
@@ -49,7 +53,7 @@ public class JenkinsTestWorker implements OurRemoteTestClassProcessor, Serializa
         IdGenerator<Object> idGenerator = testServices.get(IdGenerator.class);
 
         targetProcessor = new WorkerTestClassProcessor(targetProcessor, idGenerator.generateId(),
-                Channel.current().getName(), new TrueTimeProvider());
+                getChannelName(), new TrueTimeProvider());
         ContextClassLoaderProxy<TestClassProcessor> proxy = new ContextClassLoaderProxy<TestClassProcessor>(
                 TestClassProcessor.class, targetProcessor, remoteTestClassProcessorCreator.testClassLoader.get());
         processor = targetProcessor;
@@ -83,7 +87,7 @@ public class JenkinsTestWorker implements OurRemoteTestClassProcessor, Serializa
         try {
 //            processor.stop();
         } finally {
-            LOGGER.info("{} finished executing tests.", Channel.current().getName());
+            LOGGER.info("{} finished executing tests.", getChannelName());
             // Clean out any security manager the tests might have installed
             System.setSecurityManager(null);
             testServices.close();
