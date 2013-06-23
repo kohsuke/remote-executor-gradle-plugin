@@ -1,5 +1,9 @@
 import hudson.cli.CLI;
-import hudson.remoting.*;
+import hudson.remoting.Channel;
+import hudson.remoting.ClassLoaderHolder;
+import hudson.remoting.DelegatingCallable;
+import hudson.remoting.FastPipedInputStream;
+import hudson.remoting.FastPipedOutputStream;
 import org.gradle.api.internal.tasks.testing.TestCompleteEvent;
 import org.gradle.api.internal.tasks.testing.TestDescriptorInternal;
 import org.gradle.api.internal.tasks.testing.TestStartEvent;
@@ -30,11 +34,13 @@ public class JenkinsConnector implements Serializable {
         new Thread() {
             @Override
             public void run() {
-                int r = cli.execute(Arrays.asList("channel-process", "master"), p2i, p1o, System.err);
+                int r = cli.execute(Arrays.asList("channel-process", /*"-J","-Xrunjdwp:transport=dt_socket,server=y,address=8000",*/ "master"), p2i, p1o, System.err);
                 System.out.println(r);
             }
         }.start();
-        return new Channel("cli", Executors.newCachedThreadPool(), p1i, p2o);
+        Channel ch = new Channel("cli", Executors.newCachedThreadPool(), p1i, p2o);
+        JUnitInjector.insert(ch);
+        return ch;
     }
 
     public JenkinsConnector() {

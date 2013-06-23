@@ -3,6 +3,9 @@ apply plugin: 'idea'
 
 repositories {
     mavenCentral()
+    maven {
+        url "http://repo.jenkins-ci.org/public"
+    }
 }
 
 dependencies {
@@ -12,4 +15,10 @@ dependencies {
    compile 'org.jenkins-ci.main:cli:1.509.1'
    compile 'junit:junit:4.11'
    compile 'org.apache.commons:commons-io:1.3.2'
+}
+
+idea {
+    module {
+        downloadSources = true;
+    }
 }
