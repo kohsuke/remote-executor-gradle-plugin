@@ -11,6 +11,7 @@ import org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecuter;
 import org.gradle.api.tasks.testing.TestOutputEvent;
 import org.gradle.api.tasks.testing.TestResult;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -38,10 +39,15 @@ public class JenkinsConnector implements Serializable {
 //                        "-J","-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000",
                         "master"), p2i, p1o, System.err);
                 System.out.println(r);
+                System.out.println("CLI Command finished");
+                try {
+                    cli.close();
+                } catch (Exception e) {
+                    System.out.println("Error on closing CLI");
+                }
             }
         }.start();
         Channel ch = new Channel("cli", Executors.newCachedThreadPool(), p1i, p2o);
-//        JUnitInjector.insert(ch);
         return ch;
     }
 
