@@ -34,12 +34,14 @@ public class JenkinsConnector implements Serializable {
         new Thread() {
             @Override
             public void run() {
-                int r = cli.execute(Arrays.asList("channel-process", /*"-J","-Xrunjdwp:transport=dt_socket,server=y,address=8000",*/ "master"), p2i, p1o, System.err);
+                int r = cli.execute(Arrays.asList("channel-process",
+//                        "-J","-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000",
+                        "master"), p2i, p1o, System.err);
                 System.out.println(r);
             }
         }.start();
         Channel ch = new Channel("cli", Executors.newCachedThreadPool(), p1i, p2o);
-        JUnitInjector.insert(ch);
+//        JUnitInjector.insert(ch);
         return ch;
     }
 

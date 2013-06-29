@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
+import org.gradle.CacheUsage;
+import org.gradle.GradleLauncher;
 import org.gradle.api.file.FileTree;
+import org.gradle.api.internal.ClassPathRegistry;
+import org.gradle.api.internal.DefaultClassPathProvider;
+import org.gradle.api.internal.DefaultClassPathRegistry;
+import org.gradle.api.internal.classpath.DefaultModuleRegistry;
+import org.gradle.api.internal.classpath.ModuleRegistry;
 import org.gradle.api.internal.tasks.testing.TestClassProcessor;
 import org.gradle.api.internal.tasks.testing.TestFramework;
 import org.gradle.api.internal.tasks.testing.TestResultProcessor;
@@ -26,11 +33,24 @@ import org.gradle.api.internal.tasks.testing.processors.MaxNParallelTestClassPro
 import org.gradle.api.internal.tasks.testing.processors.RestartEveryNTestClassProcessor;
 import org.gradle.api.internal.tasks.testing.processors.TestMainAction;
 import org.gradle.api.internal.tasks.testing.worker.ForkingTestClassProcessor;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.tasks.testing.Test;
+import org.gradle.cache.CacheRepository;
+import org.gradle.cache.internal.*;
+import org.gradle.initialization.GradleLauncherFactory;
 import org.gradle.internal.Factory;
 import org.gradle.internal.TrueTimeProvider;
+import org.gradle.internal.id.LongIdGenerator;
+import org.gradle.internal.nativeplatform.*;
+import org.gradle.internal.nativeplatform.services.NativeServices;
 import org.gradle.messaging.actor.ActorFactory;
+import org.gradle.messaging.remote.MessagingServer;
+import org.gradle.messaging.remote.internal.MessagingServices;
+import org.gradle.process.internal.DefaultWorkerProcessFactory;
 import org.gradle.process.internal.WorkerProcessBuilder;
+import org.gradle.process.internal.child.WorkerProcessClassPathProvider;
+
+import java.lang.reflect.Field;
 
 /**
  * The default test class scanner factory.
@@ -39,7 +59,10 @@ import org.gradle.process.internal.WorkerProcessBuilder;
  */
 public class JenkinsTestClassExecutor implements TestExecuter {
 
-    public JenkinsTestClassExecutor() {
+    private Factory<WorkerProcessBuilder> workerProcessBuilderFactory;
+
+    public JenkinsTestClassExecutor(Factory<WorkerProcessBuilder> workerProcessBuilderFactory) {
+        this.workerProcessBuilderFactory = workerProcessBuilderFactory;
     }
 
     public void execute(final Test testTask, TestResultProcessor testResultProcessor) {
@@ -47,7 +70,7 @@ public class JenkinsTestClassExecutor implements TestExecuter {
         final WorkerTestClassProcessorFactory testInstanceFactory = testFramework.getProcessorFactory();
         final Factory<TestClassProcessor> forkingProcessorFactory = new Factory<TestClassProcessor>() {
             public TestClassProcessor create() {
-                return new JenkinsTestClassProcessor("http://localhost:8080/jenkins", testInstanceFactory, testTask,
+                return new JenkinsTestClassProcessor("http://localhost:8080/jenkins", workerProcessBuilderFactory, testInstanceFactory, testTask,
                         testTask.getClasspath(), testFramework.getWorkerConfigurationAction());
             }
         };
