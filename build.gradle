@@ -18,22 +18,8 @@ class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
     }
 }
 
-task runTestOnRemoteViaCliCommand << {
-    def connector = new JenkinsConnector()
-    Channel channel = connector.connectToJenkins("http://localhost:8080/jenkins");
-    connector.executeTestOnRemote(channel, "com.tngtech.java.junit.dataprovider.MockitoFailingRemoteTest", project.sourceSets.test.runtimeClasspath.files*.toURI()*.toURL())
-    channel.close();
-}
-
-task runTestOnRemoteViaUpgrade << {
-    def connector = new JenkinsConnector()
-    Channel channel = connector.connectToJenkinsMasterViaUpgrade("http://localhost:8080/jenkins");
-    connector.executeTestOnRemote(channel, "com.tngtech.java.junit.dataprovider.MockitoFailingRemoteTest", project.sourceSets.test.runtimeClasspath.files*.toURI()*.toURL())
-    channel.close();
-}
-
 test {
-    jvmArgs '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5007'
+//    jvmArgs '-Xdebug', '-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5007'
 }
 
 repositories {
@@ -48,7 +34,7 @@ dependencies {
 }
 
 tasks.withType(Test).each { testTask ->
-    testTask.testExecuter = new JenkinsTestClassExecutor(testTask.testExecuter.workerFactory);
+    testTask.testExecuter = new JenkinsTestClassExecutor("http://localhost:8080/jenkins", testTask.testExecuter.workerFactory);
 }
 
 task wrapper(type: Wrapper) {

@@ -1,3 +1,4 @@
+import com.google.common.base.Joiner;
 import hudson.remoting.Channel;
 import org.gradle.api.Action;
 import org.gradle.api.internal.tasks.testing.TestClassProcessor;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTestClassProcessor, Serializable {
@@ -19,14 +21,17 @@ public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTe
     private static final Logger LOGGER = LoggerFactory.getLogger(JenkinsTestWorker.class);
     private final String jenkinsUrl;
     private final WorkerTestClassProcessorFactory factory;
+    private List<String> jvmOptions;
     private CountDownLatch completed;
     private TestClassProcessor processor;
     private TestResultProcessor resultProcessor;
     private Channel channel;
+    private JenkinsConnector jenkinsConnector;
 
-    public JenkinsTestWorker(String jenkinsUrl, WorkerTestClassProcessorFactory factory) {
+    public JenkinsTestWorker(String jenkinsUrl, WorkerTestClassProcessorFactory factory, List<String> options) {
         this.jenkinsUrl = jenkinsUrl;
         this.factory = factory;
+        this.jvmOptions = options;
     }
 
     private void startReceivingTests(WorkerProcessContext workerProcessContext) {
@@ -75,11 +80,8 @@ public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTe
 
         System.setProperty(WORKER_ID_SYS_PROPERTY, workerProcessContext.getWorkerId().toString());
 
-        try {
-            channel = new JenkinsConnector().connectToJenkins(jenkinsUrl);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        jenkinsConnector = new JenkinsConnector(jenkinsUrl);
+        channel = jenkinsConnector.connectToJenkins(jvmOptions);
 
         startReceivingTests(workerProcessContext);
 
@@ -96,11 +98,10 @@ public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTe
             try {
                 if (channel != null) {
                     channel.close();
-                    LOGGER.info("{} finished executing tests. - Waiting for Channel to close", workerProcessContext.getDisplayName());
-                    Thread.sleep(2000);
+                    jenkinsConnector.waitForCliConnectionToClose();
                 }
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new UncheckedException(e);
             }
         }
     }
