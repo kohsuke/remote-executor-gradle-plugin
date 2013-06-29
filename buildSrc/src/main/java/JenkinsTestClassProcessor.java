@@ -41,7 +41,6 @@ public class JenkinsTestClassProcessor implements TestClassProcessor {
             builder.applicationClasspath(classPath);
             builder.setLoadApplicationInSystemClassLoader(true);
             builder.worker(new JenkinsTestWorker(jenkinsUrl, processorFactory, options.getAllJvmArgs()));
-            builder.setLoadApplicationInSystemClassLoader(true);
             // TODO: What are the Java-Options to start the JVM with?
             options.copyTo(builder.getJavaCommand());
             buildConfigAction.execute(builder);
