@@ -18,8 +18,12 @@ class OnlyPrintout implements hudson.remoting.Callable<Boolean,Void> {
     }
 }
 
+tasks.create('captureProcessBuilder', CaptureProcessBuilderTask)
+
 test {
 //    jvmArgs '-Xdebug', '-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5007'
+//    maxParallelForks = 3
+//    forkEvery = 1
 }
 
 repositories {
@@ -34,7 +38,7 @@ dependencies {
 }
 
 tasks.withType(Test).each { testTask ->
-    testTask.testExecuter = new JenkinsTestClassExecutor("http://localhost:8080/jenkins", testTask.testExecuter.workerFactory);
+    testTask.testExecuter = new JenkinsTestClassExecutor("http://localhost:8080/jenkins", captureProcessBuilder.processBuilderFactory);
 }
 
 task wrapper(type: Wrapper) {

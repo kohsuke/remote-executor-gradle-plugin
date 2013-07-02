@@ -39,7 +39,7 @@ public class JenkinsTestClassExecutor implements TestExecuter {
     private Factory<WorkerProcessBuilder> workerProcessBuilderFactory;
     private String jenkinsUrl;
 
-    public JenkinsTestClassExecutor( String jenkinsUrl, Factory<WorkerProcessBuilder> workerProcessBuilderFactory) {
+    public JenkinsTestClassExecutor(String jenkinsUrl, Factory<WorkerProcessBuilder> workerProcessBuilderFactory) {
         this.workerProcessBuilderFactory = workerProcessBuilderFactory;
         this.jenkinsUrl = jenkinsUrl;
     }
