@@ -37,9 +37,9 @@ public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTe
     private void startReceivingTests(WorkerProcessContext workerProcessContext) {
         try {
             ClassLoader applicationClassLoader = workerProcessContext.getApplicationClassLoader();
-            processor = channel.call(new CreateJenkinsTestClassProcessorCallable(factory, applicationClassLoader));
+            processor = channel.call(new CreateJenkinsTestClassProcessorCallable(factory, applicationClassLoader, workerProcessContext.getWorkerId().toString()));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new UncheckedException(e);
         }
 
         ObjectConnection serverConnection = workerProcessContext.getServerConnection();
@@ -81,7 +81,8 @@ public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTe
         System.setProperty(WORKER_ID_SYS_PROPERTY, workerProcessContext.getWorkerId().toString());
 
         jenkinsConnector = new JenkinsConnector(jenkinsUrl);
-        channel = jenkinsConnector.connectToJenkins(jvmOptions);
+        channel = jenkinsConnector.connectToJenkins(workerProcessContext.getWorkerId().toString(), jvmOptions);
+        channel.setProperty(WORKER_ID_SYS_PROPERTY, workerProcessContext.getWorkerId().toString());
 
         startReceivingTests(workerProcessContext);
 

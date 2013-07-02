@@ -28,7 +28,7 @@ public class JenkinsConnector implements Serializable {
         }
     }
 
-    public Channel connectToJenkins(final List<String> javaOpts) {
+    public Channel connectToJenkins(String channelName, final List<String> javaOpts) {
 
         try {
             final CLI cli = new CLI(url);
@@ -57,7 +57,7 @@ public class JenkinsConnector implements Serializable {
                 }
             };
             cliThread.start();
-            Channel ch = new Channel("cli", Executors.newCachedThreadPool(), p1i, p2o);
+            Channel ch = new Channel(channelName, Executors.newCachedThreadPool(), p1i, p2o);
             return ch;
         } catch (IOException e) {
             throw new RuntimeException(e);

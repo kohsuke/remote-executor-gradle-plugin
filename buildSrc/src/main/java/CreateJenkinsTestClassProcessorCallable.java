@@ -19,14 +19,22 @@ public class CreateJenkinsTestClassProcessorCallable implements DelegatingCallab
 
     private final WorkerTestClassProcessorFactory targetProcessor;
     private final ClassLoaderHolder classLoaderHolder;
+    private final String workerId;
 
-    CreateJenkinsTestClassProcessorCallable(WorkerTestClassProcessorFactory targetProcessor, ClassLoader applicationClassLoader) {
+    CreateJenkinsTestClassProcessorCallable(WorkerTestClassProcessorFactory targetProcessor, ClassLoader applicationClassLoader, String workerId) {
         this.targetProcessor = targetProcessor;
+        this.workerId = workerId;
         this.classLoaderHolder = new ClassLoaderHolder(applicationClassLoader);
     }
 
     @Override
     public TestClassProcessor call() throws RuntimeException {
+        Channel channel = Channel.current();
+
+        System.err.println(channel.getName());
+        System.err.println(getWorkerId());
+        System.setProperty(JenkinsTestWorker.WORKER_ID_SYS_PROPERTY, channel.getRemoteProperty(JenkinsTestWorker.WORKER_ID_SYS_PROPERTY).toString());
+
         RemoteTestFrameworkServiceRegistry testServices = new RemoteTestFrameworkServiceRegistry(CreateJenkinsTestClassProcessorCallable.this);
         IdGenerator<Object> idGenerator = testServices.get(IdGenerator.class);
 
@@ -37,13 +45,12 @@ public class CreateJenkinsTestClassProcessorCallable implements DelegatingCallab
                 TestClassProcessor.class, targetProcessor, classLoaderHolder.get());
         TestClassProcessor remoteProcessor = proxy.getSource();
 
-        Channel currentChannel = Channel.current();
-        return currentChannel.export(TestClassProcessor.class, remoteProcessor);
+        return channel.export(TestClassProcessor.class, remoteProcessor);
 //            serverConnection.addIncoming(RemoteTestClassProcessor.class, this);
     }
 
     public Object getWorkerId() {
-        return Channel.current().getName();  //To change body of created methods use File | Settings | File Templates.
+        return workerId;  //To change body of created methods use File | Settings | File Templates.
     }
 
     @Override

@@ -22,8 +22,8 @@ tasks.create('captureProcessBuilder', CaptureProcessBuilderTask)
 
 test {
 //    jvmArgs '-Xdebug', '-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5007'
-//    maxParallelForks = 3
-//    forkEvery = 1
+    maxParallelForks = 2
+    forkEvery = 3
 }
 
 repositories {
@@ -38,7 +38,11 @@ dependencies {
 }
 
 tasks.withType(Test).each { testTask ->
-    testTask.testExecuter = new JenkinsTestClassExecutor("http://localhost:8080/jenkins", captureProcessBuilder.processBuilderFactory);
+    testTask.testExecuter =
+        new JenkinsTestClassExecutor(
+                "http://localhost:8080/jenkins",
+                captureProcessBuilder.processBuilderFactory,
+                captureProcessBuilder.actorFactory);
 }
 
 task wrapper(type: Wrapper) {

@@ -22,11 +22,13 @@ import org.gradle.api.internal.tasks.testing.WorkerTestClassProcessorFactory;
 import org.gradle.api.internal.tasks.testing.detection.DefaultTestClassScanner;
 import org.gradle.api.internal.tasks.testing.detection.TestExecuter;
 import org.gradle.api.internal.tasks.testing.detection.TestFrameworkDetector;
+import org.gradle.api.internal.tasks.testing.processors.MaxNParallelTestClassProcessor;
 import org.gradle.api.internal.tasks.testing.processors.RestartEveryNTestClassProcessor;
 import org.gradle.api.internal.tasks.testing.processors.TestMainAction;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.internal.Factory;
 import org.gradle.internal.TrueTimeProvider;
+import org.gradle.messaging.actor.ActorFactory;
 import org.gradle.process.internal.WorkerProcessBuilder;
 
 /**
@@ -38,10 +40,12 @@ public class JenkinsTestClassExecutor implements TestExecuter {
 
     private Factory<WorkerProcessBuilder> workerProcessBuilderFactory;
     private String jenkinsUrl;
+    private ActorFactory actorFactory;
 
-    public JenkinsTestClassExecutor(String jenkinsUrl, Factory<WorkerProcessBuilder> workerProcessBuilderFactory) {
+    public JenkinsTestClassExecutor(String jenkinsUrl, Factory<WorkerProcessBuilder> workerProcessBuilderFactory, ActorFactory actorFactory) {
         this.workerProcessBuilderFactory = workerProcessBuilderFactory;
         this.jenkinsUrl = jenkinsUrl;
+        this.actorFactory = actorFactory;
     }
 
     public void execute(final Test testTask, TestResultProcessor testResultProcessor) {
@@ -53,7 +57,14 @@ public class JenkinsTestClassExecutor implements TestExecuter {
                         testTask.getClasspath(), testFramework.getWorkerConfigurationAction());
             }
         };
-        TestClassProcessor processor = new RestartEveryNTestClassProcessor(forkingProcessorFactory, testTask.getForkEvery());
+        Factory<TestClassProcessor> reforkingProcessorFactory = new Factory<TestClassProcessor>() {
+            public TestClassProcessor create() {
+                return new RestartEveryNTestClassProcessor(forkingProcessorFactory, testTask.getForkEvery());
+            }
+        };
+
+        TestClassProcessor processor = new MaxNParallelTestClassProcessor(testTask.getMaxParallelForks(),
+                reforkingProcessorFactory, actorFactory);
 
 
         final FileTree testClassFiles = testTask.getCandidateClassFiles();
