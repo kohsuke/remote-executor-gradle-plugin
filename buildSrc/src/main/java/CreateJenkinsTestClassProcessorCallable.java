@@ -15,6 +15,13 @@ import org.gradle.listener.ContextClassLoaderProxy;
 import org.gradle.messaging.actor.ActorFactory;
 import org.gradle.messaging.actor.internal.DefaultActorFactory;
 
+/**
+ * Instantiates {@link WorkerTestClassProcessor}, which finally executes tests, inside the worker JVM in Jenkins
+ * and returns the proxy interface back to Gradle JVM.
+ *
+ * <p>
+ * (Despite its class name, this actually doesn't instantiate {@link JenkinsTestClassProcessor}!)
+ */
 public class CreateJenkinsTestClassProcessorCallable implements DelegatingCallable<TestClassProcessor, RuntimeException> {
 
     private final WorkerTestClassProcessorFactory targetProcessor;

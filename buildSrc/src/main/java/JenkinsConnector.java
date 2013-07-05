@@ -20,6 +20,10 @@ public class JenkinsConnector implements Serializable {
     private URL url;
     private Thread cliThread;
 
+    /**
+     * @param url
+     *      URL of Jenkins master.
+     */
     public JenkinsConnector(String url) {
         try {
             this.url = new URL(url);
@@ -28,6 +32,15 @@ public class JenkinsConnector implements Serializable {
         }
     }
 
+    /**
+     * Uses the Jenkins remote terminal access plugin to launch a JVM on one of the nodes under the control of Jenkins,
+     * then establish a {@link Channel} to it and returns it.
+     *
+     * @param channelName
+     *      Name set to the channel. This is primarily used for diagnosis.
+     * @param javaOpts
+     *      Additional JVM options to be set on the newly launched JVM.
+     */
     public Channel connectToJenkins(String channelName, final List<String> javaOpts) {
 
         try {

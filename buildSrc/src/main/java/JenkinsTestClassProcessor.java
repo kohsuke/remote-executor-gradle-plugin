@@ -11,6 +11,9 @@ import org.gradle.process.internal.WorkerProcessBuilder;
 
 import java.io.File;
 
+/**
+ * {@link TestClassProcessor} that lives inside Gradle JVM and passes execution to remote JVMs over remoting.
+ */
 public class JenkinsTestClassProcessor implements TestClassProcessor {
     private String jenkinsUrl;
     private Factory<WorkerProcessBuilder> workerFactory;
@@ -18,6 +21,9 @@ public class JenkinsTestClassProcessor implements TestClassProcessor {
     private final JavaForkOptions options;
     private final Iterable<File> classPath;
     private final Action<WorkerProcessBuilder> buildConfigAction;
+    /**
+     * Remoting proxy to a worker JVM that runs on the client machine.
+     */
     private RemoteTestClassProcessor remoteProcessor;
     private WorkerProcess workerProcess;
     private TestResultProcessor resultProcessor;

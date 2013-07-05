@@ -32,7 +32,10 @@ import org.gradle.messaging.actor.ActorFactory;
 import org.gradle.process.internal.WorkerProcessBuilder;
 
 /**
- * The default test class scanner factory.
+ * {@link TestExecuter} that executes tests inside remote JVMs under Jenkins.
+ *
+ * <p>
+ * This is the entry point to the remote test execution mechanism.
  *
  * @author Tom Eyckmans
  */

@@ -1,4 +1,3 @@
-import com.google.common.base.Joiner;
 import hudson.remoting.Channel;
 import org.gradle.api.Action;
 import org.gradle.api.internal.tasks.testing.TestClassProcessor;
@@ -16,6 +15,11 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * {@link RemoteTestClassProcessor} that runs inside a worker JVM.
+ *
+ * The actual execution of tests are then forwarded on to {@link #processor} to a JVM inside Jenkins.
+ */
 public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTestClassProcessor, Serializable {
     public static final String WORKER_ID_SYS_PROPERTY = "org.gradle.test.worker";
     private static final Logger LOGGER = LoggerFactory.getLogger(JenkinsTestWorker.class);
@@ -23,7 +27,14 @@ public class JenkinsTestWorker implements Action<WorkerProcessContext>, RemoteTe
     private final WorkerTestClassProcessorFactory factory;
     private List<String> jvmOptions;
     private CountDownLatch completed;
+    /**
+     * Interface exported from the JVM running inside Jenkins. This guy actually executes the test.
+     */
     private TestClassProcessor processor;
+    /**
+     * Exported, so that it can be passed to {@link #processor}. This is {@linkplain ObjectConnection an outgoing transmitter}
+     * connected back to the Gradle JVM.
+     */
     private TestResultProcessor resultProcessor;
     private Channel channel;
     private JenkinsConnector jenkinsConnector;
